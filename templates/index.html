@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bird Detection Logs</title>
+  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <style>
+    body { background-color: #f8f9fa; }
+    a.list-group-item:hover { background-color: #e9ecef; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <h1 class="mb-3">Bird Detection Logs</h1>
+  
+    <!-- Filter rentang tanggal -->
+    <form class="row gy-2 gx-2 align-items-end mb-4" method="get" action="{{ url_for('index') }}">
+      <div class="col-auto">
+        <label class="form-label mb-0">Start date</label>
+        <input type="date" name="start" class="form-control" value="{{ start or '' }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0">End date</label>
+        <input type="date" name="end" class="form-control" value="{{ end or '' }}">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary">Filter</button>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+  
+    {% if dates and dates|length %}
+      <div class="list-group">
+        {% for d in dates %}
+          <a href="{{ url_for('browse_date', date=d.name) }}" class="list-group-item list-group-item-action">
+            {{ d.name }}
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-light border">
+        Tidak ada direktori tanggal pada rentang ini.
+      </div>
+    {% endif %}
+  </div>
+  
+</body>
+</html>

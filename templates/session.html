@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Session {{ session }}</title>
+  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <style>
+    body { background-color: #f8f9fa; }
+    .card-img-top { object-fit: cover; height: 150px; }
+    video { width: 100%; max-height: 400px; margin-bottom: 1rem; }
+    .log-link { display: block; padding: 0.5rem; background: #fff; border-radius: 0.25rem;
+                border: 1px solid #dee2e6; margin-bottom: 0.5rem; text-decoration: none; color: #212529; }
+    .log-link:hover { background: #e9ecef; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="d-flex gap-2 mb-3">
+      <a href="{{ url_for('browse_date', date=date) }}" class="btn btn-secondary">&larr; Back</a>
+      <a href="{{ url_for('zip_session', date=date, session=session) }}" class="btn btn-primary">Download ZIP sesi</a>
+    </div>
+
+    <h1 class="mb-4">Session: {{ session }}</h1>
+
+    <!-- Snapshots -->
+    <h3 id="snapshots" class="d-flex align-items-center justify-content-between">
+      <span>Snapshots
+        <small class="text-muted">(Total: {{ total_snaps }}, Page {{ page }} / {{ pages }})</small>
+      </span>
+      <div class="d-flex gap-2">
+        <form class="d-flex align-items-center" method="get"
+              action="{{ url_for('browse_session', date=date, session=session) }}#snapshots">
+          <input type="hidden" name="page" value="{{ page }}">
+          <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+            {% for opt in [12,24,48,96] %}
+              <option value="{{ opt }}" {% if per_page==opt %}selected{% endif %}>{{ opt }}/page</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+    </h3>
+
+    <div class="row mb-4">
+      {% for img in snapshots %}
+      <div class="col-6 col-md-3 mb-3">
+        <div class="card">
+          <a href="{{ url_for('serve_file', filename=date ~ '/' ~ session ~ '/snapshots/' ~ img) }}" target="_blank">
+            <!-- pakai thumbnail cache -->
+            <img loading="lazy"
+                 src="{{ url_for('thumb', filename=date ~ '/' ~ session ~ '/snapshots/' ~ img) }}"
+                 class="card-img-top" alt="{{ img }}">
+          </a>
+          <div class="card-body p-2 text-center">
+            <small class="text-truncate d-block" style="max-width:100%">{{ img }}</small>
+            <a class="btn btn-sm btn-outline-secondary mt-1"
+               href="{{ url_for('download_file', filename=date ~ '/' ~ session ~ '/snapshots/' ~ img) }}">Download</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12"><div class="alert alert-light border">Belum ada snapshot.</div></div>
+      {% endfor %}
+    </div>
+
+    <nav aria-label="Snapshots pagination">
+      <ul class="pagination">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+          <a class="page-link"
+             href="{{ url_for('browse_session', date=date, session=session, page=page-1, per_page=per_page) }}#snapshots">Prev</a>
+        </li>
+
+        {% set start_p = 1 if page <= 3 else page-2 %}
+        {% set end_p   = pages if page >= pages-2 else page+2 %}
+
+        {% if start_p > 1 %}
+          <li class="page-item"><a class="page-link"
+            href="{{ url_for('browse_session', date=date, session=session, page=1, per_page=per_page) }}#snapshots">1</a></li>
+          {% if start_p > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        {% endif %}
+
+        {% for p in range(start_p, end_p+1) %}
+          <li class="page-item {% if p==page %}active{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('browse_session', date=date, session=session, page=p, per_page=per_page) }}#snapshots">{{ p }}</a>
+          </li>
+        {% endfor %}
+
+        {% if end_p < pages %}
+          {% if end_p < pages-1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+          <li class="page-item"><a class="page-link"
+            href="{{ url_for('browse_session', date=date, session=session, page=pages, per_page=per_page) }}#snapshots">{{ pages }}</a></li>
+        {% endif %}
+
+        <li class="page-item {% if page >= pages %}disabled{% endif %}">
+          <a class="page-link"
+             href="{{ url_for('browse_session', date=date, session=session, page=page+1, per_page=per_page) }}#snapshots">Next</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Videos -->
+    <h3>Videos</h3>
+    {% for vid in videos %}
+    <div class="mb-3">
+      <video controls preload="metadata"
+             {% if total_snaps and snapshots|length %}
+               poster="{{ url_for('thumb', filename=date ~ '/' ~ session ~ '/snapshots/' ~ snapshots[0]) }}"
+             {% endif %}>
+        <source src="{{ url_for('serve_file', filename=date ~ '/' ~ session ~ '/' ~ vid) }}"
+                type="{{ video_types.get(vid, 'video/mp4') }}">
+        Your browser does not support HTML5 video.
+      </video>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted">{{ vid }}</span>
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{{ url_for('download_file', filename=date ~ '/' ~ session ~ '/' ~ vid) }}">Download</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-light border">Tidak ada video pada sesi ini.</div>
+    {% endfor %}
+
+    <!-- Logs -->
+    <h3>Logs</h3>
+    <div class="mb-4">
+      {% for txt in txts %}
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <a href="{{ url_for('serve_file', filename=date ~ '/' ~ session ~ '/' ~ txt) }}"
+           class="log-link flex-grow-1 me-2" target="_blank">{{ txt }}</a>
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{{ url_for('download_file', filename=date ~ '/' ~ session ~ '/' ~ txt) }}">Download</a>
+      </div>
+      {% else %}
+      <div class="alert alert-light border">Tidak ada log teks.</div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

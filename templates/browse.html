@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sessions - {{ date }}</title>
+  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+  <style>
+    body { background-color: #f8f9fa; }
+    a.list-group-item:hover { background-color: #e9ecef; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <a href="/" class="btn btn-secondary mb-3">&larr; Back</a>
+    <h1 class="mb-4">Sessions on {{ date }}</h1>
+    <div class="list-group">
+      {% for s in sessions %}
+        <a href="{{ url_for('browse_session', date=date, session=s.name) }}" class="list-group-item list-group-item-action">
+          {{ s.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
